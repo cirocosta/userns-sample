@@ -9,12 +9,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <sys/sysmacros.h>
-#ifndef NS_GET_USERNS
-#define NSIO 0xb7
-#define NS_GET_USERNS _IO(NSIO, 0x1)
-#endif
-
 #define STACK_SIZE 1024 * 1024
 
 static char child_stack[STACK_SIZE];
