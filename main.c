@@ -21,6 +21,21 @@ static char child_stack[STACK_SIZE];
 static const char* mapping = "0 1001 1";
 
 void
+show_userns()
+{
+        int err;
+        char buf[128] = { 0 };
+
+        err = readlink("/proc/self/ns/user", buf, 128);
+        if (err == -1) {
+                perror("readlink");
+                exit(1);
+        }
+
+        printf("userns: %s\n", buf);
+}
+
+void
 show_info(char* fname)
 {
         int fd, err;
@@ -38,46 +53,13 @@ show_info(char* fname)
                 exit(1);
         }
 
-	close(fd);
+        close(fd);
 
+        show_userns();
         printf("%-8s %-8s %-8d\n", "process", "euid", geteuid());
+        printf("%-8s %-8s %-8d\n", "process", "egid", getegid());
         printf("%-8s %-8s %-8d\n", "file", "uid", sb.st_uid);
-        printf("%-8s %-8s %-8d\n", "process", "gid", getegid());
         printf("%-8s %-8s %-8d\n", "file", "gid", sb.st_gid);
-}
-
-void
-show_userns()
-{
-        int fd, ns_fd, err;
-        struct stat sb;
-
-        fd = open("/proc/self/ns/user", O_RDONLY);
-        if (fd == -1) {
-                perror("open");
-                exit(1);
-        }
-
-        ns_fd = ioctl(fd, NS_GET_USERNS);
-        if (ns_fd == -1) {
-                perror("ioctl NS_GET_USERNS");
-                exit(1);
-        }
-
-        err = fstat(ns_fd, &sb);
-        if (err == -1) {
-                perror("fstat");
-                exit(1);
-        }
-
-	close(fd);
-	close(ns_fd);
-
-        printf("%-8s %-8s\n", "DEVICE", "INODE");
-        printf("%-8lx%lx %-8ld\n",
-               (long)major(sb.st_dev),
-               (long)minor(sb.st_dev),
-               (long)sb.st_ino);
 }
 
 static int
@@ -119,7 +101,7 @@ main(int argc, char** argv)
         setbuf(stdout, NULL);
         setbuf(stderr, NULL);
 
-        show_userns();
+        show_info(argv[1]);
 
         child_pid = clone(child, stack, flags, argv[1]);
         if (child_pid == -1) {
