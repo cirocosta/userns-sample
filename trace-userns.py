@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+# trace-userns.py  traces use of userns primitives.
+#
+
 from bcc import BPF
 
 
