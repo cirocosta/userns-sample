@@ -10,6 +10,8 @@
 #include <unistd.h>
 
 #define STACK_SIZE 1024 * 1024
+#define UIDMAP_FNAME "/proc/self/uid_map"
+#define NSUSER_FNAME "/proc/self/ns/user"
 
 static char child_stack[STACK_SIZE];
 static const char* mapping = "0 1001 1";
@@ -20,9 +22,9 @@ show_userns()
         int err;
         char buf[128] = { 0 };
 
-        err = readlink("/proc/self/ns/user", buf, 128);
+        err = readlink(NSUSER_FNAME, buf, 128);
         if (err == -1) {
-                perror("readlink");
+                perror("readlink " NSUSER_FNAME);
                 exit(1);
         }
 
@@ -61,9 +63,9 @@ child(void* arg)
 {
         int fd, n;
 
-        fd = open("/proc/self/uid_map", O_RDWR);
+        fd = open(UIDMAP_FNAME, O_RDWR);
         if (fd == -1) {
-                perror("open");
+                perror("open " UIDMAP_FNAME);
                 exit(1);
         }
 
@@ -94,8 +96,6 @@ main(int argc, char** argv)
 
         setbuf(stdout, NULL);
         setbuf(stderr, NULL);
-
-        show_info(argv[1]);
 
         child_pid = clone(child, stack, flags, argv[1]);
         if (child_pid == -1) {
